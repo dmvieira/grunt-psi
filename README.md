@@ -68,9 +68,11 @@ Optional. Threshold score to pass the PageSpeed test.
 ```js
 grunt.initConfig({
   psi: {
-    options: {
-        port: '4000'
-    }
+      localhost: {
+          options: {
+              port: 4000
+          }
+      }
   }
 });
 ```
