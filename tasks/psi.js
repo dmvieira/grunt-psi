@@ -187,14 +187,10 @@ module.exports = function(grunt) {
                     ]);
                 }
 
-                console.log("");
-                console.log("");
-                console.log("");
-                console.log("Page Weight: Google Page Speed Insights");
+                console.log('\n\n\n');
+                console.log('Page Weight: Google Page Speed Insights');
                 console.log(table.toString());
-                console.log("");
-                console.log("");
-                console.log("");
+                console.log('\n\n\n');
                 done();
             });
 
