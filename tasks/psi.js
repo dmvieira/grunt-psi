@@ -44,7 +44,7 @@ module.exports = function(grunt) {
         psiReportDir = psiReportDir.replace(/(\:\/\/|\:)/g, "_");
 
         try {
-            stats = fs.lstatSync(psiReportDir);
+            var stats = fs.lstatSync(psiReportDir);
             if (stats.isDirectory()) {
                 // Do nothing
             }
