@@ -173,8 +173,8 @@ module.exports = function(grunt) {
             });
 
             parser.on('finish', function() {
-
-                for (var i = (output.length > options.limit) ? output.length - options.limit : 0; i < output.length; i++) {
+                var outputLength = output.length;
+                for (var i = (outputLength > options.limit) ? outputLength - options.limit : 0; i < outputLength; i++) {
                     record = output[i];
                     table.push([
                         record.date,
