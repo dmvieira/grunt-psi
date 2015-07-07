@@ -34,6 +34,10 @@ module.exports = function(grunt) {
             threshold: 1
         });
 
+        if (typeof(options.port) === 'string') {
+            options.port = parseInt(options.port);
+        }
+
         var done = this.async();
 
         var psiReportDir = reportDir + options.url;
