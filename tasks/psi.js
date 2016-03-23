@@ -18,29 +18,20 @@ var mkdirp = require('mkdirp');
 
 module.exports = function(grunt) {
 
+    // Globals
     var options = null;
     var reportDir = 'reports/';
+    var psiReportDir = '';
     var psiReportFile = '/psi_report.csv';
+    var psiReportFileData = null;
     var psiReport = '';
+    var done = null;
+    var serverUrl = null;
 
-    grunt.registerMultiTask('psi', 'Automate running Speedgun with Grunt', function() {
+    function setReportFile() {
 
-        // Merge task-specific and/or target-specific options with these defaults.
-        options = this.options({
-            url: 'http://localhost',
-            port: 4000,
-            limit: 10,
-            strategy: "desktop",
-            threshold: 1
-        });
+        psiReportDir = reportDir + options.url;
 
-        if (typeof(options.port) === 'string') {
-            options.port = parseInt(options.port);
-        }
-
-        var done = this.async();
-
-        var psiReportDir = reportDir + options.url;
         if (options.port !== null) {
             psiReportDir += '\:' + options.port;
         }
@@ -53,97 +44,176 @@ module.exports = function(grunt) {
                 // Do nothing
             }
         } catch (e) {
+            // try to create the directory
             mkdirp(psiReportDir, function(err) {
                 if (err) console.error(err)
             });
         }
 
-        psiReport = psiReportDir + psiReportFile;
+        return psiReportDir + psiReportFile;
 
-        ngrok.connect(options.port, function(err, url) {
+    }
 
-            if (err !== null) {
-                grunt.fail.fatal(err);
-                return done();
-            }
+    function readPsiReportFileData() {
 
-            function createReport(data) {
+        console.log('Read data from ' + psiReport);
 
-                psi(
-                    url, {
-                        strategy: options.strategy,
-                        threshold: options.threshold
-                    },
-                    function(err, psiData) {
+        if (grunt.file.isFile(psiReport)) {
 
-                        var date = new Date();
-                        psiData.pageStats.date = date.toString();
-                        psiData.pageStats.score = psiData.score;
-                        data.push(psiData.pageStats);
+            var input = fs.createReadStream(psiReport);
+            var parser = csv.parse({
+                columns: true
+            });
+            var output = [];
+            var record = null;
 
-                        var fields = [
-                            'date',
-                            'score',
-                            'numberResources',
-                            'numberHosts',
-                            'totalRequestBytes',
-                            'numberStaticResources',
-                            'htmlResponseBytes',
-                            'cssResponseBytes',
-                            'imageResponseBytes',
-                            'javascriptResponseBytes',
-                            'otherResponseBytes',
-                            'numberJsResources',
-                            'numberCssResources'
-                        ];
+            parser.on('error', function(err) {
+                console.log(err.message);
+                done();
+            });
 
-                        json2csv({
-                            data: data,
-                            fields: fields
-                        }, function(err, csv) {
+            parser.on('readable', function() {
+                while (record = parser.read()) {
+                    output.push(record);
+                }
+            });
 
-                            if (err) console.log(err);
-                            grunt.file.write(psiReport, csv);
-                            grunt.task.run(['psi-report']);
-                            done();
+            parser.on('finish', function() {
+                psiReportFileData = output;
+                sumbitToPSI();
+            });
 
-                        });
+            input.pipe(parser);
 
-                    }
-                );
-            }
+        } else {
 
-            if (grunt.file.isFile(psiReport)) {
+            psiReportFileData = [];
+            sumbitToPSI();
 
-                var input = fs.createReadStream(psiReport);
-                var parser = csv.parse({
-                    columns: true
-                });
-                var output = [];
-                var record = null;
+        }
 
-                parser.on('error', function(err) {
-                    console.log(err.message);
-                    done();
-                });
+    }
 
-                parser.on('readable', function() {
-                    while (record = parser.read()) {
-                        output.push(record);
-                    }
-                });
+    function sumbitToPSI() {
 
-                parser.on('finish', function() {
-                    createReport(output);
-                });
+        console.log('Submit ' + serverUrl + ' to Google PSI.');
 
-                input.pipe(parser);
+        var psiOptions = {};
+        if(options.strategy) {
+            psiOptions.strategy = options.strategy
+        }
 
-            } else {
-                createReport([]);
-            }
+        psi(serverUrl, psiOptions).then(function(data) {
+            processPsiData(data);
+        });
+
+    }
+
+    function processPsiData(psiData) {
+
+        console.log('Received data from PSI');
+
+        if(options.debug) {
+            console.log(psiData);
+        }
+
+        var date = new Date();
+        psiData.pageStats.date = date.toString();
+        psiData.pageStats.score = psiData.score;
+        psiReportFileData.push(psiData.pageStats);
+
+        writeNewReport();
+
+    }
+
+    function writeNewReport() {
+
+        var fields = [
+            'date',
+            'score',
+            'numberResources',
+            'numberHosts',
+            'totalRequestBytes',
+            'numberStaticResources',
+            'htmlResponseBytes',
+            'cssResponseBytes',
+            'imageResponseBytes',
+            'javascriptResponseBytes',
+            'otherResponseBytes',
+            'numberJsResources',
+            'numberCssResources'
+        ];
+
+        json2csv({
+            data: psiReportFileData,
+            fields: fields
+        }, function(err, csv) {
+
+            if (err) console.log(err);
+            grunt.file.write(psiReport, csv);
+            grunt.task.run(['psi-report']);
+            done();
 
         });
+
+    }
+
+    grunt.registerMultiTask('psi', 'Automate running Google PSI with Grunt', function() {
+
+        // Merge task-specific and/or target-specific options with these defaults.
+        options = this.options({
+            url: 'http://localhost',
+            limit: 10,
+            publicServer: true,
+            debug: false
+        });
+
+        if (typeof(options.port) === 'string') {
+            options.port = parseInt(options.port);
+        }
+
+        if (typeof(options.publicServer) === 'string') {
+            options.publicServer = (options.publicServer === 'true')
+        }
+
+        if (typeof(options.debug) === 'string') {
+            options.debug = (options.debug === 'true')
+        }
+
+        psiReport = setReportFile();
+
+        done = this.async();
+
+        if(!options.publicServer) {
+
+            console.log('Open ngrok connection to locahost:' + options.port);
+
+            ngrok.connect(options.port, function(err, ngrokServer) {
+
+                console.log('Connected to ' + ngrokServer);
+
+                if (err !== null) {
+                    grunt.fail.fatal(err);
+                    return done();
+                }
+
+                serverUrl = ngrokServer;
+
+                readPsiReportFileData();
+
+            });
+
+        } else {
+
+            serverUrl = options.url;
+
+            if(Number.isInteger(options.port)) {
+                serverUrl += ":" + options.port;
+            }
+
+            readPsiReportFileData();
+
+        }
 
     });
 

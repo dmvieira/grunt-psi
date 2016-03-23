@@ -26,16 +26,25 @@ module.exports = function(grunt) {
         psi: {
             default_options: {
                 options: {
-                    port: 4000,
+                    port: 3000,
                     limit: 5,
-                    strategy: "desktop"
+                    strategy: "desktop",
+                    publicServer: false
                 }
             },
             custom_options: {
                 options: {
                     port: 4001,
                     limit: 5,
-                    strategy: "mobile"
+                    strategy: "mobile",
+                    publicServer: false
+                }
+            },
+            bloomberg_options: {
+                options: {
+                    url: 'http://bloomberg.com',
+                    limit: 5,
+                    strategy: "desktop"
                 }
             }
         },
