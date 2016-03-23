@@ -44,7 +44,13 @@ Optional. Determines where the report will be stored. Currently, all PSI tests a
 Type: `Integer`
 Default value: `null`
 
-Optional. The port required to reach localhost. Used by ngrok.
+Optional. Access a specific port at the options.url.
+
+#### options.publicServer
+Type: `Boolean`
+Default value: `true`
+
+Optional. If the server is not accessible publically, grunt-psi will attempt to connect to the URL via an ngrok connection.
 
 #### options.limit
 Type: `Integer`
@@ -58,11 +64,11 @@ Default value: `'desktop'`
 
 Optional. Strategy to use when analyzing the page.
 
-#### options.threshold
-Type: `Integer`
-Default value: `1`
+#### options.debug
+Type: `String`
+Default value: `false`
 
-Optional. Threshold score to pass the PageSpeed test.
+Optional. Display more information to the console.
 
 ### Usage Examples
 ```js
@@ -81,5 +87,4 @@ grunt.initConfig({
 In lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
 
 ## Release History
-_(Nothing yet)_
 Updated to PSI 2.x. General bug fixes.
