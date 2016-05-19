@@ -186,7 +186,7 @@ module.exports = function(grunt) {
 
         if(!options.publicServer) {
 
-            console.log('Open ngrok connection to locahost:' + options.port);
+            console.log('Open ngrok connection to localhost:' + options.port);
 
             ngrok.connect(options.port, function(err, ngrokServer) {
 
@@ -197,9 +197,9 @@ module.exports = function(grunt) {
                     return done();
                 }
 
-                serverUrl = ngrokServer;
-
+                serverUrl = ngrokServer + options.path;
                 readPsiReportFileData();
+
 
             });
 
@@ -210,6 +210,8 @@ module.exports = function(grunt) {
             if(Number.isInteger(options.port)) {
                 serverUrl += ":" + options.port;
             }
+
+            serverUrl += options.path;
 
             readPsiReportFileData();
 
