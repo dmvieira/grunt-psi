@@ -163,6 +163,7 @@ module.exports = function(grunt) {
         // Merge task-specific and/or target-specific options with these defaults.
         options = this.options({
             url: 'http://localhost',
+            path: '',
             limit: 10,
             publicServer: true,
             debug: false
